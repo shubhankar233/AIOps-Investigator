@@ -42,4 +42,4 @@ AIOps Investigator helps engineers investigate cloud incidents by:
 
 ## License
 
-MIT
+MITx    
