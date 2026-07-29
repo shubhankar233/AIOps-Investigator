@@ -4,7 +4,9 @@ import uuid
 from shared.response import success_response, error_response
 from shared.validator import validate_request
 from shared.logger import log_info, log_error
+from services.investigation_service import InvestigationService
 
+service = InvestigationService()
 
 def lambda_handler(event, context):
     """
@@ -44,12 +46,18 @@ def lambda_handler(event, context):
 
         logs = body.get("logs", [])
 
+        
+
+        analysis = service.analyze(
+            incident_id=incident_id,
+            logs=logs
+        )
+
         response = {
             "status": "success",
             "incident_id": incident_id,
-            "analysis_mode": "mock",
             "received_logs": len(logs),
-            "message": "Logs received successfully"
+            **analysis
         }
 
         log_info(
