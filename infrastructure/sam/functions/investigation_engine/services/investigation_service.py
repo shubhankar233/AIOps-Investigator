@@ -38,18 +38,6 @@ class InvestigationService:
         elif len(findings) == 1:
             severity = "MEDIUM"
 
-        # analysis = {
-        #     "analysis_mode": "rule-engine",
-        #     "summary": f"{len(findings)} issue(s) detected.",
-        #     "severity": severity,
-        #     "root_cause": findings if findings else ["Unknown"],
-        #     "recommendation": (
-        #         "Proceed to AI investigation."
-        #         if findings
-        #         else "No known issue detected."
-        #     )
-        # }
-
         analysis = {
             "analysis_mode": "rule-engine",
             "summary": f"{len(findings)} issue(s) detected.",
@@ -60,7 +48,7 @@ class InvestigationService:
                 if findings
                 else "No known issue detected."
             ),
-            "ai_prompt": prompt
+            # "ai_prompt": prompt
         }
 
         log_info(
