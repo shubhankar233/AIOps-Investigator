@@ -1,9 +1,11 @@
 from shared.logger import log_info
 from services.rule_engine import RuleEngine
 from services.prompt_builder import PromptBuilder
+from services.bedrock_service import BedrockService
 
 rule_engine = RuleEngine()
 prompt_builder = PromptBuilder()
+bedrock_service = BedrockService()
 
 class InvestigationService:
     """
@@ -23,6 +25,7 @@ class InvestigationService:
             logs=logs,
             findings=findings
         )
+        ai_result = bedrock_service.analyze(prompt)
 
         log_info(
             "AI prompt generated",
@@ -48,7 +51,7 @@ class InvestigationService:
                 if findings
                 else "No known issue detected."
             ),
-            # "ai_prompt": prompt
+            "ai_result": ai_result
         }
 
         log_info(
