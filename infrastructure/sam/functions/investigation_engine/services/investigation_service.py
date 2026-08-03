@@ -1,16 +1,16 @@
 from shared.logger import log_info
 from services.rule_engine import RuleEngine
-from services.prompt_builder import PromptBuilder
 from services.bedrock_service import BedrockService
 
-rule_engine = RuleEngine()
-prompt_builder = PromptBuilder()
-bedrock_service = BedrockService()
 
 class InvestigationService:
     """
     Handles incident investigation logic.
     """
+
+    def __init__(self):
+        self.rule_engine = RuleEngine()
+        self.bedrock_service = BedrockService()
 
     def analyze(self, incident_id: str, logs: list) -> dict:
 
@@ -19,20 +19,9 @@ class InvestigationService:
             incident_id=incident_id
         )
 
-        findings = rule_engine.analyze(logs)
-        prompt = prompt_builder.build(
-            incident_id=incident_id,
-            logs=logs,
-            findings=findings
-        )
-        ai_result = bedrock_service.analyze(prompt)
+        # Step 1: Run rule engine
+        findings = self.rule_engine.analyze(logs)
 
-        log_info(
-            "AI prompt generated",
-            incident_id=incident_id,
-            prompt_length=len(prompt)
-        )
-               
         severity = "LOW"
 
         if len(findings) >= 2:
@@ -41,13 +30,20 @@ class InvestigationService:
         elif len(findings) == 1:
             severity = "MEDIUM"
 
+        # Step 2: Run AI investigation
+        ai_result = self.bedrock_service.analyze_incident(
+            incident_id=incident_id,
+            issues=findings,
+            logs=logs
+        )
+
         analysis = {
-            "analysis_mode": "rule-engine",
+            "analysis_mode": "rule-engine + bedrock",
             "summary": f"{len(findings)} issue(s) detected.",
             "severity": severity,
             "root_cause": findings if findings else ["Unknown"],
             "recommendation": (
-                "Proceed to AI investigation."
+                "AI investigation completed."
                 if findings
                 else "No known issue detected."
             ),
