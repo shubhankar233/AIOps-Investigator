@@ -1,6 +1,7 @@
 from shared.logger import log_info
 from services.rule_engine import RuleEngine
 from services.bedrock_service import BedrockService
+from repositories.investigation_repository import InvestigationRepository
 
 
 class InvestigationService:
@@ -11,6 +12,7 @@ class InvestigationService:
     def __init__(self):
         self.rule_engine = RuleEngine()
         self.bedrock_service = BedrockService()
+        self.repository = InvestigationRepository()
 
     def analyze(self, incident_id: str, logs: list) -> dict:
 
@@ -30,18 +32,34 @@ class InvestigationService:
         elif len(findings) == 1:
             severity = "MEDIUM"
 
-        # Step 2: Run AI investigation
+        # Step 2: Find similar previous investigations
+        similar_investigations = (
+            self.repository.find_similar_investigations(
+                issues=findings,
+                current_incident_id=incident_id
+            )
+        )
+
+        log_info(
+            "Similar investigations found",
+            incident_id=incident_id,
+            count=len(similar_investigations)
+        )
+
+        # Step 3: Run AI investigation
         ai_result = self.bedrock_service.analyze_incident(
             incident_id=incident_id,
             issues=findings,
-            logs=logs
+            logs=logs,
+            similar_investigations=similar_investigations
         )
 
         analysis = {
-            "analysis_mode": "rule-engine + bedrock",
+            "analysis_mode": "rule-engine + historical-context + bedrock",
             "summary": f"{len(findings)} issue(s) detected.",
             "severity": severity,
             "root_cause": findings if findings else ["Unknown"],
+            "similar_incidents_found": len(similar_investigations),
             "recommendation": (
                 "AI investigation completed."
                 if findings
@@ -50,9 +68,34 @@ class InvestigationService:
             "ai_result": ai_result
         }
 
+        # Step 4: Persist investigation
+        self.repository.save_investigation(
+            incident_id=incident_id,
+            logs=logs,
+            analysis=analysis
+        )
+
         log_info(
             "Investigation completed",
             incident_id=incident_id
         )
 
         return analysis
+
+    def list_investigations(self) -> list:
+        """
+        Retrieve all stored investigations.
+        """
+
+        log_info(
+            "Starting investigation history retrieval"
+        )
+
+        investigations = self.repository.list_investigations()
+
+        log_info(
+            "Investigation history retrieved",
+            count=len(investigations)
+        )
+
+        return investigations

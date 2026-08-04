@@ -24,12 +24,51 @@ Resources:
       Runtime: python3.12
       Architectures:
       - x86_64
+
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref InvestigationTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource:
+                - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-lite-v1:0"
+
+      Environment:
+        Variables:
+          INVESTIGATION_TABLE_NAME: !Ref InvestigationTable
+
       Events:
         AnalyzeIncident:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /api/v1/analyze
             Method: post
+
+        ListInvestigations:
+          Type: Api
+          Properties:
+            Path: /api/v1/investigations
+            Method: get
+
+        GetInvestigation:
+          Type: Api
+          Properties:
+            Path: /api/v1/investigations/{incident_id}
+            Method: get
+
+  InvestigationTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-investigations"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: incident_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: incident_id
+          KeyType: HASH
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
