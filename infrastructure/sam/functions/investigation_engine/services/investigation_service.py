@@ -21,8 +21,20 @@ class InvestigationService:
             incident_id=incident_id
         )
 
-        # Step 1: Run rule engine
-        findings = self.rule_engine.analyze(logs)
+        # ==========================================================
+        # Step 1: Run rule engine with evidence
+        # ==========================================================
+
+        evidence = self.rule_engine.analyze_with_evidence(
+            logs
+        )
+
+        findings = list(
+            dict.fromkeys(
+                item["issue"]
+                for item in evidence
+            )
+        )
 
         severity = "LOW"
 
@@ -32,7 +44,17 @@ class InvestigationService:
         elif len(findings) == 1:
             severity = "MEDIUM"
 
+        log_info(
+            "Rule engine analysis completed",
+            incident_id=incident_id,
+            finding_count=len(findings),
+            evidence_count=len(evidence)
+        )
+
+        # ==========================================================
         # Step 2: Find similar previous investigations
+        # ==========================================================
+
         similar_investigations = (
             self.repository.find_similar_investigations(
                 issues=findings,
@@ -46,16 +68,22 @@ class InvestigationService:
             count=len(similar_investigations)
         )
 
+        # ==========================================================
         # Step 3: Run AI investigation
+        # ==========================================================
+
         ai_result = self.bedrock_service.analyze_incident(
             incident_id=incident_id,
             issues=findings,
             logs=logs,
-            similar_investigations=similar_investigations
+            similar_investigations=similar_investigations,
+            evidence=evidence
         )
 
-        # Build compact historical evidence for the API/frontend.
-        # Keep the full historical investigations internal for Bedrock.
+        # ==========================================================
+        # Step 4: Build compact historical evidence
+        # ==========================================================
+
         similar_incidents = []
 
         for investigation in similar_investigations:
@@ -95,6 +123,24 @@ class InvestigationService:
                 }
             )
 
+        # ==========================================================
+        # Step 5: Calculate investigation confidence
+        # ==========================================================
+
+        confidence = "LOW"
+
+        if findings and ai_result.get("confidence") == "HIGH":
+            confidence = "HIGH"
+
+        elif findings and ai_result.get(
+            "confidence"
+        ) in ["MEDIUM", "HIGH"]:
+            confidence = "MEDIUM"
+
+        # ==========================================================
+        # Step 6: Build analysis result
+        # ==========================================================
+
         analysis = {
             "analysis_mode": "rule-engine + historical-context + bedrock",
             "summary": f"{len(findings)} issue(s) detected.",
@@ -113,10 +159,18 @@ class InvestigationService:
                 else "No known issue detected."
             ),
 
+            "evidence": ai_result.get(
+                "evidence",
+                []
+            ),
+
             "ai_result": ai_result
         }
 
-        # Step 4: Persist investigation
+        # ==========================================================
+        # Step 7: Persist investigation
+        # ==========================================================
+
         self.repository.save_investigation(
             incident_id=incident_id,
             logs=logs,

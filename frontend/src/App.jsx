@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 
 const API_URL =
-  "https://jjrslzffp7.execute-api.us-east-1.amazonaws.com/Prod/api/v1";
+  import.meta.env.VITE_API_URL;
 
 const normalizeInvestigation = (payload) => {
   const item = payload?.data || payload;
@@ -345,6 +345,27 @@ API Gateway returned 502`}
 
             </div>
 
+            {/* Evidence */}
+            <div className="result-card">
+              <div className="result-card-header">
+                <h3>Evidence</h3>
+              </div>
+
+              {result.evidence && result.evidence.length > 0 ? (
+                <ul className="evidence-list">
+                  {result.evidence.map((item, index) => (
+                    <li key={index}>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="empty-state">
+                  No evidence was returned by the AI investigation.
+                </p>
+              )}
+            </div>
+
             {/* Probable Root Cause */}
 
             <div className="card">
@@ -412,25 +433,17 @@ API Gateway returned 502`}
 
             {/* Metadata */}
 
-            <div className="metadata">
+            <div className="analysis-meta">
 
-              <span>
-                <strong>
-                  Analysis mode:
-                </strong>{" "}
-                {result.analysis_mode ||
-                  "Unknown"}
-              </span>
+                <span>
+                    <strong>Analysis mode:</strong>{" "}
+                    {result.analysis_mode || "Unknown"}
+                </span>
 
-              <br />
-
-              <span>
-                <strong>
-                  Logs analyzed:
-                </strong>{" "}
-                {result.received_logs ??
-                  "Unknown"}
-              </span>
+                <span>
+                    <strong>Logs analyzed:</strong>{" "}
+                    {result.received_logs ?? "Unknown"}
+                </span>
 
             </div>
 
@@ -618,6 +631,11 @@ API Gateway returned 502`}
                         {analysis.summary ||
                           "Investigation completed"}
                       </span>
+                      <small>
+                          {item.created_at
+                              ? new Date(item.created_at).toLocaleString()
+                              : ""}
+                      </small>
 
                     </div>
 

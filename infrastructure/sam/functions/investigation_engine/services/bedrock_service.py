@@ -22,7 +22,8 @@ class BedrockService:
         incident_id: str,
         issues: list,
         logs: list,
-        similar_investigations: list | None = None
+        similar_investigations: list | None = None,
+        evidence: list | None = None
     ) -> dict:
         """
         Send incident information and historical investigations
@@ -31,6 +32,9 @@ class BedrockService:
 
         if similar_investigations is None:
             similar_investigations = []
+
+        if evidence is None:
+            evidence = []
 
         # ==========================================================
         # Build historical investigation context
@@ -123,7 +127,7 @@ Detected Issues:
 Application Logs:
 {chr(10).join(
     f"{i + 1}. {log}"
-    for i, log in enumerate(logs)
+    for i, log in enumerate(logs[:50])
 )}
 
 ==================================================
@@ -174,6 +178,9 @@ Use exactly this structure:
 
 {{
     "probable_root_cause": "string",
+    "evidence": [
+        "string"
+    ],
     "reasoning": "string",
     "remediation_steps": [
         "string"
@@ -186,11 +193,23 @@ Rules:
 - probable_root_cause must contain the most likely
   technical root cause.
 
+- evidence must contain the specific log observations
+  that support the probable root cause.
+
+- evidence must use information from the CURRENT logs.
+
+- Do not invent evidence that is not present in the logs.
+
+- Include only the most relevant evidence.
+
 - reasoning must briefly explain why the CURRENT logs
-  support that conclusion.
+  support the conclusion.
 
 - reasoning may mention relevant historical evidence
   when appropriate.
+
+- Historical incidents are supporting evidence only.
+  They must not replace evidence from the CURRENT logs.
 
 - remediation_steps must contain practical AWS/application
   remediation actions.
@@ -244,6 +263,10 @@ Rules:
                 "content"
             ][0]["text"]
 
+            log_info(
+                "Raw Bedrock response",
+                response=ai_text
+            )
             # ======================================================
             # Parse JSON response
             # ======================================================
@@ -281,6 +304,7 @@ Rules:
                     "probable_root_cause": (
                         "Unable to determine"
                     ),
+                    "evidence": [],
                     "reasoning": (
                         "The AI model returned an invalid "
                         "response format."
@@ -310,6 +334,7 @@ Rules:
 
             return {
                 "probable_root_cause": "AI analysis failed",
+                "evidence": [],
                 "reasoning": (
                     "The investigation engine could not complete "
                     "the Amazon Bedrock analysis."

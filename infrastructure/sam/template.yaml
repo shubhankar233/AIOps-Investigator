@@ -41,6 +41,12 @@ Resources:
               Resource:
                 - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-lite-v1:0"
 
+        - Statement:
+            - Effect: Allow
+              Action:
+                - logs:FilterLogEvents
+              Resource: "*"
+
       Environment:
         Variables:
           INVESTIGATION_TABLE_NAME: !Ref InvestigationTable
@@ -50,6 +56,16 @@ Resources:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /api/v1/analyze
+            Method: post
+
+        # ==========================================
+        # CloudWatch Log Investigation
+        # POST /api/v1/analyze/cloudwatch
+        # ==========================================
+        AnalyzeCloudWatchIncident:
+          Type: Api
+          Properties:
+            Path: /api/v1/analyze/cloudwatch
             Method: post
 
         ListInvestigations:

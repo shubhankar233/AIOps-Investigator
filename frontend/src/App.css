@@ -297,6 +297,14 @@ body {
   letter-spacing: 0.3px;
 }
 
+.severity.critical{
+
+    background:#7F1D1D;
+
+    color:white;
+
+}
+
 .severity.high {
   background: #fee4e2;
   color: #d92d20;
@@ -564,6 +572,13 @@ body {
 
   font-size: 10px;
 }
+.history-item small{
+
+    color:#98A2B3;
+
+    font-size:10px;
+
+}
 
 /* ========================================
    HISTORY META
@@ -580,6 +595,47 @@ body {
   color: #667085;
 
   font-size: 10px;
+}
+
+  /* ========================================
+   EVIDENCE
+======================================== */
+
+.result-card {
+  padding: 18px;
+
+  background: #ffffff;
+
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+
+  box-shadow: 0 1px 2px rgba(16,24,40,.03);
+}
+
+.result-card-header {
+  margin-bottom: 12px;
+}
+
+.result-card-header h3 {
+  margin: 0;
+
+  font-size: 15px;
+}
+
+.evidence-list {
+  margin: 0;
+
+  padding-left: 20px;
+
+  color: #475467;
+
+  line-height: 1.7;
+
+  font-size: 12px;
+}
+
+.evidence-list li{
+  margin-bottom:6px;
 }
 
 /* ========================================

@@ -3,15 +3,19 @@ import uuid
 
 
 from shared.response import success_response, error_response
-from shared.validator import validate_request
+from shared.validator import (
+    validate_request,
+    validate_cloudwatch_request
+)
 from shared.logger import log_info, log_error
 from services.investigation_service import InvestigationService
 from repositories.investigation_repository import InvestigationRepository
+from services.cloudwatch_service import CloudWatchService
 
 
 service = InvestigationService()
 repository = InvestigationRepository()
-
+cloudwatch_service = CloudWatchService()
 
 def lambda_handler(event, context):
 # def lambda_handler(event: dict[str, Any], context: Any):
@@ -60,6 +64,102 @@ def lambda_handler(event, context):
 
             return success_response(
                 investigations
+            )
+
+        # ==========================================
+        # POST /api/v1/analyze/cloudwatch
+        # ==========================================
+        if (
+            method == "POST"
+            and event.get("resource") == "/api/v1/analyze/cloudwatch"
+        ):
+
+            body = json.loads(
+                event.get("body", "{}")
+            )
+
+            log_info(
+                "CloudWatch investigation request received"
+            )
+
+            is_valid, error = validate_cloudwatch_request(
+                body
+            )
+
+            if not is_valid:
+
+                log_error(
+                    "CloudWatch request validation failed",
+                    reason=error
+                )
+
+                return error_response(
+                    error,
+                    400
+                )
+
+            log_group_name = body[
+                "log_group_name"
+            ]
+
+            minutes = body.get(
+                "minutes",
+                15
+            )
+
+            # Current time in milliseconds
+            import time
+
+            end_time = int(
+                time.time() * 1000
+            )
+
+            start_time = end_time - (
+                minutes * 60 * 1000
+            )
+
+            logs = cloudwatch_service.get_logs(
+                log_group_name=log_group_name,
+                start_time=start_time,
+                end_time=end_time,
+                limit=100
+            )
+
+            if not logs:
+
+                return error_response(
+                    "No CloudWatch logs found "
+                    f"for the last {minutes} minutes.",
+                    404
+                )
+
+            incident_id = (
+                f"INC-{uuid.uuid4().hex[:8].upper()}"
+            )
+
+            analysis = service.analyze(
+                incident_id=incident_id,
+                logs=logs
+            )
+
+            response = {
+                "status": "success",
+                "incident_id": incident_id,
+                "source": "cloudwatch",
+                "log_group_name": log_group_name,
+                "time_window_minutes": minutes,
+                "received_logs": len(logs),
+                **analysis
+            }
+
+            log_info(
+                "CloudWatch investigation completed",
+                incident_id=incident_id,
+                log_count=len(logs)
+            )
+
+            return success_response(
+                response
             )
 
         # ==========================================
