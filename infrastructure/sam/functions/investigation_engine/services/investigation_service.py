@@ -54,17 +54,65 @@ class InvestigationService:
             similar_investigations=similar_investigations
         )
 
+        # Build compact historical evidence for the API/frontend.
+        # Keep the full historical investigations internal for Bedrock.
+        similar_incidents = []
+
+        for investigation in similar_investigations:
+
+            previous_analysis = investigation.get(
+                "analysis",
+                {}
+            )
+
+            similar_incidents.append(
+                {
+                    "incident_id": investigation.get(
+                        "incident_id"
+                    ),
+                    "similarity_score": round(
+                        investigation.get(
+                            "similarity_score",
+                            0
+                        ) * 100
+                    ),
+                    "matching_issues": investigation.get(
+                        "matching_issues",
+                        []
+                    ),
+                    "severity": previous_analysis.get(
+                        "severity",
+                        "UNKNOWN"
+                    ),
+                    "summary": previous_analysis.get(
+                        "summary",
+                        "No summary available."
+                    ),
+                    "root_cause": previous_analysis.get(
+                        "root_cause",
+                        []
+                    )
+                }
+            )
+
         analysis = {
             "analysis_mode": "rule-engine + historical-context + bedrock",
             "summary": f"{len(findings)} issue(s) detected.",
             "severity": severity,
             "root_cause": findings if findings else ["Unknown"],
-            "similar_incidents_found": len(similar_investigations),
+
+            "similar_incidents_found": len(
+                similar_investigations
+            ),
+
+            "similar_incidents": similar_incidents,
+
             "recommendation": (
                 "AI investigation completed."
                 if findings
                 else "No known issue detected."
             ),
+
             "ai_result": ai_result
         }
 
@@ -91,7 +139,9 @@ class InvestigationService:
             "Starting investigation history retrieval"
         )
 
-        investigations = self.repository.list_investigations()
+        investigations = (
+            self.repository.list_investigations()
+        )
 
         log_info(
             "Investigation history retrieved",

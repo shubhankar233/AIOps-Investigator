@@ -309,7 +309,12 @@ Rules:
             )
 
             return {
-                "ai_summary": "AI analysis failed.",
-                "confidence": "N/A",
+                "probable_root_cause": "AI analysis failed",
+                "reasoning": (
+                    "The investigation engine could not complete "
+                    "the Amazon Bedrock analysis."
+                ),
+                "remediation_steps": [],
+                "confidence": "LOW",
                 "error": str(error)
             }
