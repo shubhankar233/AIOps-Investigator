@@ -2,6 +2,8 @@ from shared.logger import log_info
 from services.rule_engine import RuleEngine
 from services.bedrock_service import BedrockService
 from repositories.investigation_repository import InvestigationRepository
+from services.log_processing_service import LogProcessingService
+from services.log_classification_service import LogClassificationService
 
 
 class InvestigationService:
@@ -13,6 +15,7 @@ class InvestigationService:
         self.rule_engine = RuleEngine()
         self.bedrock_service = BedrockService()
         self.repository = InvestigationRepository()
+        self.log_classifier = LogClassificationService()
 
     def analyze(self, incident_id: str, logs: list) -> dict:
 
@@ -22,11 +25,47 @@ class InvestigationService:
         )
 
         # ==========================================================
+        # Step 0: Preprocess logs
+        # ==========================================================
+
+        processed_logs = LogProcessingService.remove_duplicate_logs(logs)
+
+        processed_logs = LogProcessingService.remove_noise_logs(
+            processed_logs
+        )
+
+        log_info(
+            "Log preprocessing completed",
+            incident_id=incident_id,
+            original_logs=len(logs),
+            processed_logs=len(processed_logs)
+        )
+
+        classification = self.log_classifier.classify_logs(
+            logs
+        )
+
+        important_logs = classification["important_logs"]
+
+        log_info(
+            "Logs classified",
+            total_logs=classification["total_logs"],
+            important_logs=classification["important_count"],
+            ignored_logs=classification["ignored_count"]
+        )
+
+        classification_summary = {
+            "total_logs": classification["total_logs"],
+            "important_logs": classification["important_count"],
+            "ignored_logs": classification["ignored_count"]
+        }
+
+        # ==========================================================
         # Step 1: Run rule engine with evidence
         # ==========================================================
 
         evidence = self.rule_engine.analyze_with_evidence(
-            logs
+            important_logs
         )
 
         findings = list(
@@ -36,13 +75,15 @@ class InvestigationService:
             )
         )
 
-        severity = "LOW"
+        incident_category = (
+            self.log_classifier.classify_incident(
+                findings
+            )
+        )
 
-        if len(findings) >= 2:
-            severity = "HIGH"
-
-        elif len(findings) == 1:
-            severity = "MEDIUM"
+        severity = self.rule_engine.determine_severity(
+            findings
+        )
 
         log_info(
             "Rule engine analysis completed",
@@ -72,13 +113,33 @@ class InvestigationService:
         # Step 3: Run AI investigation
         # ==========================================================
 
-        ai_result = self.bedrock_service.analyze_incident(
-            incident_id=incident_id,
-            issues=findings,
-            logs=logs,
-            similar_investigations=similar_investigations,
-            evidence=evidence
-        )
+        if findings:
+
+            ai_result = self.bedrock_service.analyze_incident(
+                incident_id=incident_id,
+                issues=findings,
+                logs=important_logs,
+                similar_investigations=similar_investigations,
+                evidence=evidence
+            )
+
+        else:
+
+            ai_result = {
+                "probable_root_cause": "No known issue detected",
+                "evidence": [],
+                "reasoning": (
+                    "No important logs or rule-engine findings "
+                    "were detected in the current incident."
+                ),
+                "remediation_steps": [],
+                "confidence": "HIGH"
+            }
+
+            log_info(
+                "AI investigation skipped because no findings were detected",
+                incident_id=incident_id
+            )
 
         # ==========================================================
         # Step 4: Build compact historical evidence
@@ -142,9 +203,21 @@ class InvestigationService:
         # ==========================================================
 
         analysis = {
-            "analysis_mode": "rule-engine + historical-context + bedrock",
+            "analysis_mode": (
+                "rule-engine + historical-context + bedrock"
+                if findings
+                else "rule-engine + log-classification"
+            ),
+            "received_logs": len(logs),
+            "processed_logs": len(processed_logs),  
+            "important_logs": important_logs,
+            "ignored_logs": classification["ignored_logs"],
+
+            "log_classification": classification_summary,
             "summary": f"{len(findings)} issue(s) detected.",
             "severity": severity,
+            "incident_category": incident_category,
+            "confidence": confidence,
             "root_cause": findings if findings else ["Unknown"],
 
             "similar_incidents_found": len(

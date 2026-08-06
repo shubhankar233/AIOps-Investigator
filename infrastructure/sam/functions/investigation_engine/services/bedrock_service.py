@@ -2,7 +2,10 @@ import json
 import boto3
 
 from shared.logger import log_info, log_error
-
+from shared.config import (
+    AWS_REGION,
+    BEDROCK_MODEL_ID,
+)
 
 class BedrockService:
     """
@@ -12,10 +15,10 @@ class BedrockService:
     def __init__(self):
         self.client = boto3.client(
             "bedrock-runtime",
-            region_name="us-east-1"
+            region_name=AWS_REGION
         )
 
-        self.model_id = "amazon.nova-lite-v1:0"
+        self.model_id = BEDROCK_MODEL_ID
 
     def analyze_incident(
         self,
@@ -140,27 +143,20 @@ HISTORICAL INVESTIGATION CONTEXT
 INVESTIGATION RULES
 ==================================================
 
-The current incident is the primary source of truth.
-
-Use historical investigations only as supporting evidence.
-
-Do not blindly copy conclusions from previous incidents.
-
-Consider the similarity score and matching issues when
-evaluating historical investigations.
-
-Determine the most likely technical root cause of the
-CURRENT incident based primarily on the current logs
-and detected issues.
-
-If a previous investigation is relevant, explain how
-it supports the current conclusion.
-
-If historical evidence conflicts with the current logs,
-prefer the current logs.
-
-Do not assume that similar incidents have the same
-root cause.
+    1. Analyze EVERY issue listed in DETECTED ISSUES.
+2. Do NOT ignore, omit, or silently discard any detected issue.
+3. Every detected issue must be addressed in the AI analysis.
+4. For each detected issue, determine whether it is:
+   - the probable primary root cause
+   - a contributing issue
+   - a downstream symptom
+   - or an independent issue.
+5. Use the CURRENT LOGS and CURRENT EVIDENCE as the primary source of truth.
+6. Historical incidents are supporting context only. They are NOT proof of the current root cause.
+7. Do not invent log events, infrastructure conditions, or historical facts.
+8. If the current evidence is insufficient to establish causality, explicitly state that the relationship is uncertain.
+9. Every issue that has direct log evidence must include that evidence in the analysis.
+10. Do not assume that an issue is caused by another issue unless the available evidence supports that relationship.
 
 ==================================================
 OUTPUT REQUIREMENTS
@@ -178,41 +174,119 @@ Use exactly this structure:
 
 {{
     "probable_root_cause": "string",
+
+    "issue_analysis": [
+        {{
+            "issue": "string",
+            "role": "primary_root_cause",
+            "evidence": [
+                "string"
+            ]
+        }}
+    ],
+
     "evidence": [
         "string"
     ],
+
     "reasoning": "string",
+
     "remediation_steps": [
         "string"
     ],
+
     "confidence": "LOW"
 }}
 
-Rules:
+==================================================
+ISSUE ANALYSIS REQUIREMENTS
+==================================================
+
+The "issue_analysis" array is REQUIRED.
+
+For EVERY issue listed under DETECTED ISSUES,
+create exactly ONE entry in "issue_analysis".
+
+Do NOT omit any detected issue.
+
+Each issue_analysis entry MUST contain:
+
+- issue
+- role
+- evidence
+
+The "issue" field must exactly match one of the
+issues listed under DETECTED ISSUES.
+
+The "role" field must be exactly one of:
+
+- "primary_root_cause"
+- "contributing_issue"
+- "downstream_symptom"
+- "independent_issue"
+- "uncertain"
+
+The "evidence" field must contain the CURRENT log
+observations that support that issue.
+
+If an issue has no direct current-log evidence,
+return an empty evidence array and use
+"uncertain" when appropriate.
+
+Do not invent evidence.
+
+Example:
+
+{{
+    "issue_analysis": [
+        {{
+            "issue": "Database Connectivity",
+            "role": "primary_root_cause",
+            "evidence": [
+                "ERROR Database connection timeout"
+            ]
+        }},
+        {{
+            "issue": "CPU Pressure",
+            "role": "contributing_issue",
+            "evidence": [
+                "WARN CPU limit exceeded"
+            ]
+        }},
+        {{
+            "issue": "Authentication Failure",
+            "role": "independent_issue",
+            "evidence": [
+                "ERROR Authentication failed"
+            ]
+        }}
+    ]
+}}
+
+==================================================
+GENERAL OUTPUT RULES
+==================================================
 
 - probable_root_cause must contain the most likely
   technical root cause.
 
-- evidence must contain the specific log observations
-  that support the probable root cause.
+- evidence must contain the most relevant CURRENT
+  log observations supporting the probable root cause.
 
-- evidence must use information from the CURRENT logs.
+- Do not invent evidence that is not present in the
+  CURRENT logs.
 
-- Do not invent evidence that is not present in the logs.
+- reasoning must explain why the CURRENT logs support
+  the conclusion.
 
-- Include only the most relevant evidence.
-
-- reasoning must briefly explain why the CURRENT logs
-  support the conclusion.
-
-- reasoning may mention relevant historical evidence
+- reasoning may mention historical investigations
   when appropriate.
 
 - Historical incidents are supporting evidence only.
-  They must not replace evidence from the CURRENT logs.
+  They must not replace CURRENT log evidence.
 
-- remediation_steps must contain practical AWS/application
-  remediation actions.
+- remediation_steps must contain practical
+  AWS/application remediation actions.
 
 - confidence must be exactly one of:
   LOW, MEDIUM, HIGH.

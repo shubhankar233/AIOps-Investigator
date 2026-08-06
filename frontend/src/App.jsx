@@ -277,41 +277,197 @@ API Gateway returned 502`}
 
             <div className="summary-grid">
 
-              <div className="card">
-                <span className="label">
-                  Summary
+                <div className="card">
+                  <span className="label">
+                    Summary
+                  </span>
+
+                  <strong>
+                    {result.summary ||
+                      "No summary available."}
+                  </strong>
+                </div>
+
+                <div className="card">
+                  <span className="label">
+                    Incident Category
+                  </span>
+
+                  <strong>
+                    {result.incident_category ||
+                      "Unknown"}
+                  </strong>
+                </div>
+
+                <div className="card">
+                  <span className="label">
+                    Similar Incidents
+                  </span>
+
+                  <strong>
+                    {result.similar_incidents_found ??
+                      0}
+                  </strong>
+                </div>
+
+                <div className="card">
+                  <span className="label">
+                    AI Confidence
+                  </span>
+
+                  <strong>
+                    {result.confidence ||
+                      result.ai_result?.confidence ||
+                      "N/A"}
+                  </strong>
+                </div>
+
+              </div>
+
+            {/* Log Processing */}
+
+          <div className="card log-processing">
+
+            <span className="label">
+              Log Processing
+            </span>
+
+            <div className="log-processing-grid">
+
+              <div>
+                <span className="processing-label">
+                  Total Logs
                 </span>
 
                 <strong>
-                  {result.summary ||
-                    "No summary available."}
+                  {result.log_classification
+                    ?.total_logs ?? 0}
                 </strong>
               </div>
 
-              <div className="card">
-                <span className="label">
-                  Similar Incidents
+              <div>
+                <span className="processing-label">
+                  Important Logs
                 </span>
 
                 <strong>
-                  {result.similar_incidents_found ??
-                    0}
+                  {result.log_classification
+                    ?.important_logs ?? 0}
                 </strong>
               </div>
 
-              <div className="card">
-                <span className="label">
-                  AI Confidence
+              <div>
+                <span className="processing-label">
+                  Ignored Logs
                 </span>
 
                 <strong>
-                  {result.ai_result
-                    ?.confidence ||
-                    "N/A"}
+                  {result.log_classification
+                    ?.ignored_logs ?? 0}
                 </strong>
               </div>
 
             </div>
+
+          </div>
+
+          {/* Log Classification */}
+
+          <div className="card">
+
+            <span className="label">
+              Log Classification
+            </span>
+
+            <div className="classification-summary">
+
+              <div>
+                <strong>
+                  {result.log_classification?.total_logs ?? 0}
+                </strong>
+
+                <span>
+                  Total Logs
+                </span>
+              </div>
+
+              <div>
+                <strong>
+                  {result.log_classification?.important_logs ?? 0}
+                </strong>
+
+                <span>
+                  Important Logs
+                </span>
+              </div>
+
+              <div>
+                <strong>
+                  {result.log_classification?.ignored_logs ?? 0}
+                </strong>
+
+                <span>
+                  Ignored Logs
+                </span>
+              </div>
+
+            </div>
+
+            <div className="classified-logs">
+
+              <div>
+                <span className="label">
+                  Important Logs
+                </span>
+
+                {result.important_logs?.length > 0 ? (
+
+                  <ul>
+                    {result.important_logs.map(
+                      (log, index) => (
+                        <li key={index}>
+                          {log}
+                        </li>
+                      )
+                    )}
+                  </ul>
+
+                ) : (
+                  <p className="empty-state">
+                    No important logs detected.
+                  </p>
+                )}
+
+              </div>
+
+              <div>
+                <span className="label">
+                  Ignored Logs
+                </span>
+
+                {result.ignored_logs?.length > 0 ? (
+
+                  <ul>
+                    {result.ignored_logs.map(
+                      (log, index) => (
+                        <li key={index}>
+                          {log}
+                        </li>
+                      )
+                    )}
+                  </ul>
+
+                ) : (
+                  <p className="empty-state">
+                    No ignored logs.
+                  </p>
+                )}
+
+              </div>
+
+            </div>
+
+          </div>
 
             {/* Detected Issues */}
 
@@ -341,6 +497,81 @@ API Gateway returned 502`}
                 <p>
                   No known issues detected.
                 </p>
+              )}
+
+            </div>
+
+            {/* Issue Analysis */}
+
+            <div className="card">
+
+              <span className="label">
+                Issue Analysis
+              </span>
+
+              {result.ai_result?.issue_analysis?.length > 0 ? (
+
+                <div className="issue-analysis">
+
+                  {result.ai_result.issue_analysis.map(
+                    (item, index) => (
+
+                      <div
+                        className="issue-analysis-item"
+                        key={`${item.issue}-${index}`}
+                      >
+
+                        <div className="issue-analysis-header">
+
+                          <strong>
+                            {item.issue}
+                          </strong>
+
+                          <span
+                            className={`issue-role ${item.role}`}
+                          >
+                            {item.role
+                              ?.replaceAll("_", " ")
+                              .toUpperCase()}
+                          </span>
+
+                        </div>
+
+                        {item.evidence?.length > 0 && (
+
+                          <div className="issue-evidence">
+
+                            <span className="processing-label">
+                              Evidence
+                            </span>
+
+                            <ul>
+                              {item.evidence.map(
+                                (evidence, evidenceIndex) => (
+                                  <li key={evidenceIndex}>
+                                    {evidence}
+                                  </li>
+                                )
+                              )}
+                            </ul>
+
+                          </div>
+
+                        )}
+
+                      </div>
+
+                    )
+                  )}
+
+                </div>
+
+              ) : (
+
+                <p className="empty-state">
+                  No per-issue analysis available.
+                </p>
+
               )}
 
             </div>
@@ -441,8 +672,13 @@ API Gateway returned 502`}
                 </span>
 
                 <span>
-                    <strong>Logs analyzed:</strong>{" "}
+                    <strong>Logs received:</strong>{" "}
                     {result.received_logs ?? "Unknown"}
+                </span>
+
+                <span>
+                    <strong>Logs processed:</strong>{" "}
+                    {result.processed_logs ?? "Unknown"}
                 </span>
 
             </div>
@@ -511,26 +747,32 @@ API Gateway returned 502`}
 
                         <div className="similar-incident-details">
 
-                          <span>
-                            Similarity:{" "}
-                            <strong>
-                              {incident.similarity_score ??
-                                0}
-                              %
-                            </strong>
-                          </span>
+                            <span>
+                              Similarity:{" "}
+                              <strong>
+                                {incident.similarity_score ?? 0}%
+                              </strong>
+                            </span>
 
-                          <span>
-                            Matching issues:{" "}
-                            <strong>
-                              {incident.matching_issues?.join(
-                                ", "
-                              ) ||
-                                "None"}
-                            </strong>
-                          </span>
+                            <span>
+                              Matching issues:{" "}
+                              <strong>
+                                {incident.matching_issues?.join(
+                                  ", "
+                                ) || "None"}
+                              </strong>
+                            </span>
 
-                        </div>
+                            <span>
+                              Previous root cause:{" "}
+                              <strong>
+                                {incident.root_cause?.join(
+                                  ", "
+                                ) || "Unknown"}
+                              </strong>
+                            </span>
+
+                          </div>
 
                       </div>
 

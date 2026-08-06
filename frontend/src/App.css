@@ -331,7 +331,7 @@ body {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
 
@@ -362,6 +362,49 @@ body {
 
 .card strong {
   font-size: 13px;
+}
+
+/* ========================================
+   LOG PROCESSING
+======================================== */
+
+.log-processing {
+  margin-top: 10px;
+}
+
+.log-processing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.log-processing-grid > div {
+  padding: 12px;
+
+  border: 1px solid #eaecf0;
+  border-radius: 6px;
+
+  background: #f9fafb;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.processing-label {
+  color: #667085;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.log-processing-grid strong {
+  color: #172033;
+
+  font-size: 18px;
 }
 
 /* ========================================
@@ -744,6 +787,10 @@ body {
     gap: 12px;
   }
 
+  .log-processing-grid {
+    grid-template-columns: 1fr;
+  }
+
   .header h1 {
     font-size: 17px;
   }
@@ -772,4 +819,221 @@ body {
 
     justify-content: space-between;
   }
+}
+
+/* ========================================
+   ISSUE ANALYSIS - V2
+======================================== */
+
+.issue-analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.issue-analysis-item {
+  padding: 14px 16px;
+
+  border: 1px solid #eaecf0;
+  border-radius: 8px;
+
+  background: #f9fafb;
+}
+
+.issue-analysis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-bottom: 10px;
+}
+
+.issue-analysis-header strong {
+  color: #172033;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.issue-role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+/* Primary root cause */
+
+.issue-role.primary_root_cause {
+  background: #fee4e2;
+  color: #b42318;
+}
+
+/* Contributing issue */
+
+.issue-role.contributing_issue {
+  background: #fef0c7;
+  color: #b54708;
+}
+
+/* Independent issue */
+
+.issue-role.independent_issue {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+/* Downstream symptom */
+
+.issue-role.downstream_symptom {
+  background: #f2f4f7;
+  color: #475467;
+}
+
+/* Evidence inside issue analysis */
+
+.issue-evidence {
+  padding-top: 10px;
+
+  border-top: 1px solid #eaecf0;
+}
+
+.issue-evidence .processing-label {
+  display: block;
+
+  margin-bottom: 6px;
+}
+
+.issue-evidence ul {
+  margin: 0;
+
+  padding-left: 18px;
+
+  color: #475467;
+
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.issue-evidence li {
+  margin-bottom: 3px;
+}
+
+/* ========================================
+   ISSUE ANALYSIS RESPONSIVE
+======================================== */
+
+@media (max-width: 700px) {
+
+  .issue-analysis-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .issue-role {
+    align-self: flex-start;
+  }
+
+}
+
+
+/* ========================================
+   CLASSIFICATION SUMMARY
+======================================== */
+
+.classification-summary {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 10px;
+
+  margin-bottom: 18px;
+}
+
+.classification-summary > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+
+  padding: 12px;
+
+  border: 1px solid #eaecf0;
+  border-radius: 6px;
+
+  background: #f9fafb;
+}
+
+.classification-summary strong {
+  color: #172033;
+
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.classification-summary span {
+  color: #667085;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.classified-logs {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 18px;
+}
+
+.classified-logs > div {
+  min-width: 0;
+}
+
+.classified-logs ul {
+  margin: 0;
+
+  padding-left: 20px;
+
+  color: #475467;
+
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.classified-logs li {
+  margin-bottom: 4px;
+}
+
+/* ========================================
+   CLASSIFICATION RESPONSIVE
+======================================== */
+
+@media (max-width: 700px) {
+
+  .classification-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .classified-logs {
+    grid-template-columns: 1fr;
+  }
+
 }

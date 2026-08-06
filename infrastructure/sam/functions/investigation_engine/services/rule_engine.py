@@ -4,13 +4,14 @@ class RuleEngine:
 
     Detects known infrastructure/application issues and
     preserves the log evidence that triggered each finding.
-    """
-
+    """    
     RULES = {
         # Lambda / execution issues
-        "timeout": "Lambda Timeout",
-        "timed out": "Lambda Timeout",
+        "lambda timeout": "Lambda Timeout",
+        "lambda timed out": "Lambda Timeout",
+        "lambda execution timeout": "Lambda Timeout",
         "execution exceeded": "Lambda Timeout",
+        "function timed out": "Lambda Timeout",
 
         # Database connectivity issues
         "connection refused": "Database Connectivity",
@@ -29,6 +30,13 @@ class RuleEngine:
         "out of memory": "Memory Pressure",
         "memory limit exceeded": "Memory Pressure",
         "memory usage exceeded": "Memory Pressure",
+
+        # CPU issues
+        "cpu limit exceeded": "CPU Pressure",
+        "cpu usage exceeded": "CPU Pressure",
+        "high cpu usage": "CPU Pressure",
+        "cpu utilization exceeded": "CPU Pressure",
+        "cpu throttling": "CPU Pressure",
 
         # API throttling
         "throttling": "API Rate Limiting",
@@ -56,6 +64,16 @@ class RuleEngine:
         "name resolution": "DNS Resolution Issue",
     }
 
+    HIGH_SEVERITY_ISSUES = {
+        "Lambda Timeout",
+        "Database Connectivity",
+        "IAM Permission Issue",
+        "Memory Pressure",
+        "API Gateway Error",
+        "Service Unavailable",
+        "Gateway Timeout",
+        "Network Connectivity",
+    }
     def analyze(self, logs: list) -> list:
         """
         Detect known issues from logs.
@@ -78,6 +96,24 @@ class RuleEngine:
                     findings.append(issue)
 
         return findings
+
+        # def determine_severity(self, findings: list) -> str:
+        #         """
+        #         Determine incident severity based on detected issues.
+        #         """
+    
+        #         if not findings:
+        #             return "LOW"
+    
+        #         if any(
+        #             issue in self.HIGH_SEVERITY_ISSUES
+        #             for issue in findings
+        #         ):
+        #             return "HIGH"
+    
+        #         return "MEDIUM"
+
+        
 
     def analyze_with_evidence(self, logs: list) -> list:
         """
@@ -140,3 +176,42 @@ class RuleEngine:
                             )
 
         return evidence
+
+    def determine_severity(self, findings: list) -> str:
+            """
+            Determine incident severity based on detected issue types.
+
+            The most severe detected issue determines the
+            overall incident severity.
+            """
+
+            if not findings:
+                return "LOW"
+
+            high_severity_issues = {
+                "Lambda Timeout",
+                "Database Connectivity",
+                "IAM Permission Issue",
+                "Memory Pressure",
+                "CPU Pressure",
+                "API Rate Limiting",
+                "API Gateway Error",
+                "Service Unavailable",
+                "Gateway Timeout",
+                "Network Connectivity",
+                "DNS Resolution Issue",
+            }
+
+            medium_severity_issues = {
+                "Authentication Failure",
+            }
+
+            for finding in findings:
+                if finding in high_severity_issues:
+                    return "HIGH"
+
+            for finding in findings:
+                if finding in medium_severity_issues:
+                    return "MEDIUM"
+
+            return "LOW"
